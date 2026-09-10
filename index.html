@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#303030">
+<title>Paragon Job Walk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   PARAGON JOB WALK
+   Paragon Homes brand palette, straight from the 2021 style guide.
+   Desert Storm paper, Mineshaft Black type and buttons, Bitter Gold
+   as the brand accent, Buff Yellow reserved for guiding the eye.
+   ============================================================ */
+:root{
+  /* Paragon Homes brand palette — style guide, March 2021 */
+  --paper:#F1F1EE;        /* Desert Storm  — structure, backgrounds, inactive */
+  --paper-raised:#FFFFFF;
+  --ink:#303030;          /* Mineshaft Black — type, primary buttons, overlay */
+  --ink-soft:#5C5C5C;
+  --ink-faint:#8C8C8C;
+  --gold:#8A8C79;         /* Bitter Gold  — the main brand color */
+  --gold-wash:#EAEBE5;
+  --buff:#F4D185;         /* Buff Yellow  — borders, guides the eye */
+  --buff-wash:#FDF6E7;
+  --buff-edge:#E8C273;
+  --rule:#DCDCD6;
+  --tap:56px;
+  --pad:20px;
+  --radius:4px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Archivo',system-ui,-apple-system,sans-serif;
+  font-size:17px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+input,textarea,select{font-family:inherit;font-size:17px;color:inherit}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- shell ---------- */
+.app{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.screen{display:none;flex:1;flex-direction:column}
+.screen.on{display:flex}
+
+/* ---------- masthead ---------- */
+.masthead{
+  background:var(--ink);color:var(--paper);
+  padding:calc(env(safe-area-inset-top) + 18px) var(--pad) 18px;
+}
+.masthead .mark-logo{height:34px;width:auto;display:block;margin-bottom:14px}
+.masthead h1{
+  margin:0;font-size:15px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gold);
+}
+.masthead p{margin:4px 0 0;font-size:26px;font-weight:600;letter-spacing:-.02em}
+.masthead .sub{font-size:15px;font-weight:400;color:#A6A6A0;letter-spacing:0}
+
+/* ---------- job cards ---------- */
+.jobs{padding:var(--pad);display:flex;flex-direction:column;gap:14px}
+.job{
+  display:block;width:100%;text-align:left;background:var(--paper-raised);
+  border:1px solid var(--rule);border-left:5px solid var(--gold);
+  border-radius:var(--radius);padding:18px 18px 16px;
+}
+.job[data-health="flag"]{border-left-color:var(--buff)}
+.job[data-health="due"]{border-left-color:var(--ink-faint)}
+.person{display:block;width:100%;text-align:left;background:var(--paper-raised);
+  border:1px solid var(--rule);border-left:5px solid var(--gold);
+  border-radius:var(--radius);padding:18px}
+.job-name{font-size:19px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.job-pm{font-size:14px;color:var(--ink-faint);margin-top:3px}
+.job-stats{display:flex;gap:22px;margin-top:14px;padding-top:13px;border-top:1px solid var(--rule)}
+.stat .n{font-size:22px;font-weight:600;line-height:1}
+.stat .l{font-size:12px;color:var(--ink-faint);margin-top:3px;letter-spacing:.02em}
+.stat.flagged .n{box-shadow:inset 0 -.35em 0 var(--buff)}
+
+/* ---------- walk header + progress rail ---------- */
+.walkbar{
+  position:sticky;top:0;z-index:20;background:var(--ink);color:var(--paper);
+  padding:calc(env(safe-area-inset-top) + 12px) var(--pad) 12px;
+  overflow:hidden;transform:translateZ(0);
+}
+.walkbar-row{display:flex;align-items:center;gap:14px;padding-bottom:12px}
+.back{
+  background:none;border:0;padding:8px 8px 8px 0;color:var(--gold);
+  font-size:15px;font-weight:500;
+}
+.walkbar-job{flex:1;font-size:15px;font-weight:500;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.walkbar-count{font-size:13px;color:#A6A6A0;font-variant-numeric:tabular-nums}
+.rail{display:flex;gap:3px;align-items:stretch;height:4px;overflow:hidden}
+.rail span{flex:1 1 0;height:4px;max-height:4px;background:#4C4C4C}
+.rail span.done{background:var(--gold)}
+.rail span.now{background:var(--paper)}
+
+/* ---------- section ---------- */
+.section{padding:26px var(--pad) 120px}
+.section h2{
+  margin:0 0 4px;font-size:27px;font-weight:600;letter-spacing:-.025em;line-height:1.15;
+}
+.section .lede{margin:0 0 26px;color:var(--ink-soft);font-size:15px;max-width:46ch}
+
+/* ---------- question ---------- */
+.q{padding:0 0 0 14px;margin:0 0 26px;border-left:3px solid transparent}
+.q.flagged{border-left-color:var(--buff)}
+.q > label,.q .qtext{display:block;font-size:17px;font-weight:500;margin-bottom:11px;max-width:42ch}
+.q.flagged .qtext{box-shadow:inset 0 -.55em 0 var(--buff)}
+
+/* segmented control — one tap, not a dropdown */
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{
+  flex:1 1 auto;min-height:var(--tap);min-width:88px;padding:8px 14px;
+  background:var(--paper-raised);border:1.5px solid var(--rule);
+  border-radius:var(--radius);font-weight:500;line-height:1.2;
+  transition:background .12s,border-color .12s;
+}
+.seg button[aria-pressed="true"]{
+  background:var(--ink);border-color:var(--ink);color:#fff;
+}
+.seg button[aria-pressed="true"][data-flag="1"]{
+  background:var(--buff);border-color:var(--buff-edge);color:var(--ink);
+}
+
+textarea,input[type=date],input[type=text]{
+  width:100%;background:var(--paper-raised);border:1.5px solid var(--rule);
+  border-radius:var(--radius);padding:13px 14px;line-height:1.4;
+}
+textarea{min-height:96px;resize:vertical}
+.hint{font-size:13px;color:var(--ink-faint);margin-top:7px}
+
+/* checkbox as a wide tappable bar */
+.check{
+  display:flex;align-items:center;gap:14px;width:100%;min-height:var(--tap);
+  background:var(--paper-raised);border:1.5px solid var(--rule);
+  border-radius:var(--radius);padding:12px 15px;text-align:left;font-weight:500;
+}
+.check .box{
+  width:24px;height:24px;border:2px solid var(--ink-faint);border-radius:3px;
+  flex:0 0 auto;display:grid;place-items:center;font-size:15px;color:#fff;
+}
+.check[aria-pressed="true"] .box{background:var(--ink);border-color:var(--ink)}
+
+/* ---------- redline: the one bold gesture ---------- */
+.redline{
+  margin-top:14px;background:var(--buff-wash);
+  border:1px solid #E3C4B8;border-left:3px solid var(--buff);
+  border-radius:var(--radius);padding:15px;
+}
+.redline p{margin:0 0 12px;font-size:14px;color:var(--ink);font-weight:500}
+.logged{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.logged-item{
+  display:flex;gap:11px;align-items:center;background:var(--paper-raised);
+  border:1px solid var(--rule);border-radius:var(--radius);padding:10px 12px;font-size:15px;
+}
+.logged-item .thumb{width:38px;height:38px;border-radius:3px;object-fit:cover;flex:0 0 auto;background:var(--rule)}
+.logged-item .who{font-size:13px;color:var(--ink-faint)}
+
+/* ---------- buttons ---------- */
+.btn{
+  width:100%;min-height:var(--tap);border-radius:var(--radius);font-weight:600;
+  border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);
+}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.flag{background:var(--buff);border-color:var(--buff-edge);color:var(--ink)}
+.btn.solid{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn:disabled{opacity:.4}
+.footer{
+  position:fixed;bottom:0;left:0;right:0;z-index:30;
+  background:linear-gradient(to bottom,rgba(241,241,238,0),var(--paper) 26%);
+  padding:26px var(--pad) calc(env(safe-area-inset-bottom) + 18px);
+}
+.footer-inner{max-width:560px;margin:0 auto;display:flex;gap:11px}
+
+/* ---------- issue sheet ---------- */
+.sheet{
+  position:fixed;inset:0;z-index:60;background:var(--paper);
+  display:none;flex-direction:column;overflow-y:auto;
+}
+.sheet.on{display:flex}
+.sheet-head{
+  position:sticky;top:0;background:var(--ink);color:var(--paper);
+  padding:calc(env(safe-area-inset-top) + 16px) var(--pad) 16px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sheet-head h2{margin:0;font-size:19px;font-weight:600}
+.sheet-body{padding:24px var(--pad) 130px;max-width:560px;margin:0 auto;width:100%}
+.shoot{
+  width:100%;min-height:168px;border:2px dashed var(--rule);border-radius:var(--radius);
+  background:var(--paper-raised);display:grid;place-items:center;gap:6px;
+  font-weight:600;color:var(--ink-soft);margin-bottom:24px;padding:24px;
+}
+.shoot img{max-width:100%;max-height:230px;border-radius:3px}
+.shoot .sub{font-weight:400;font-size:14px;color:var(--ink-faint)}
+
+/* ---------- done ---------- */
+.done{padding:70px var(--pad);text-align:center}
+.done .mark{
+  width:66px;height:66px;border-radius:50%;background:var(--ink);color:#fff;
+  display:grid;place-items:center;font-size:31px;margin:0 auto 26px;
+}
+.done h2{margin:0 0 10px;font-size:29px;font-weight:600;letter-spacing:-.025em}
+.done p{margin:0 auto 30px;color:var(--ink-soft);max-width:34ch}
+.tally{
+  display:flex;justify-content:center;gap:38px;margin:0 0 34px;padding:22px 0;
+  border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+}
+.tally .n{font-size:31px;font-weight:600;line-height:1}
+.tally .l{font-size:12px;color:var(--ink-faint);margin-top:4px}
+.tally .flagged{box-shadow:inset 0 -.4em 0 var(--buff)}
+
+.empty{padding:56px var(--pad);text-align:center;color:var(--ink-soft)}
+.banner{
+  background:var(--gold-wash);border-bottom:1px solid var(--rule);
+  padding:11px var(--pad);font-size:13px;color:var(--ink);text-align:center;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ══ WHO ARE YOU ══ -->
+  <section class="screen on" id="s-who">
+    <div class="masthead">
+      <img class="mark-logo" src="logo.png" alt="Paragon Homes" onerror="this.remove()">
+      <h1>Paragon</h1>
+      <p>Job walks</p>
+    </div>
+    <div class="jobs">
+      <p style="color:var(--ink-soft);margin:6px 0 4px">Who's walking today?</p>
+      <div id="pmlist" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+  </section>
+
+  <!-- ══ JOB LIST ══ -->
+  <section class="screen" id="s-jobs">
+    <div class="masthead">
+      <img class="mark-logo" src="logo.png" alt="Paragon Homes"
+           onerror="this.remove()">
+      <h1>Paragon</h1>
+      <p><span id="who-label"></span><span class="sub" id="today"></span></p>
+      <button class="back" id="switch-pm" style="padding-left:0;margin-top:8px">Not you? Switch</button>
+    </div>
+    <div id="demo-banner" class="banner" hidden>Demo data — not connected to Airtable yet</div>
+    <div class="jobs" id="joblist"></div>
+  </section>
+
+  <!-- ══ WALK ══ -->
+  <section class="screen" id="s-walk">
+    <div class="walkbar">
+      <div class="walkbar-row">
+        <button class="back" id="walk-back">Back</button>
+        <span class="walkbar-job" id="walk-job"></span>
+        <span class="walkbar-count" id="walk-count"></span>
+      </div>
+      <div class="rail" id="rail"></div>
+    </div>
+    <div class="section" id="walk-body"></div>
+    <div class="footer">
+      <div class="footer-inner">
+        <button class="btn ghost" id="prev-btn" style="flex:0 0 34%">Previous</button>
+        <button class="btn" id="next-btn" style="flex:1">Continue</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ DONE ══ -->
+  <section class="screen" id="s-done">
+    <div class="masthead"><h1>Paragon</h1><p>Walk complete</p></div>
+    <div class="done">
+      <div class="mark">✓</div>
+      <h2 id="done-job"></h2>
+      <p id="done-line"></p>
+      <div class="tally">
+        <div><div class="n" id="tally-issues">0</div><div class="l">issues logged</div></div>
+        <div><div class="n flagged" id="tally-flags">0</div><div class="l">flags raised</div></div>
+      </div>
+      <button class="btn solid" id="done-btn">Back to jobs</button>
+    </div>
+  </section>
+</div>
+
+<!-- ══ ISSUE SHEET ══ -->
+<div class="sheet" id="sheet">
+  <div class="sheet-head">
+    <h2>Log an issue</h2>
+    <button class="back" id="sheet-cancel">Cancel</button>
+  </div>
+  <div class="sheet-body">
+    <label class="shoot" for="photo" id="shoot">
+      <span style="font-size:30px">📷</span>
+      <span>Take a photo</span>
+      <span class="sub">Required — this is what the sub gets sent</span>
+    </label>
+    <input type="file" id="photo" accept="image/*" capture="environment" hidden>
+
+    <div class="q">
+      <label class="qtext" for="i-title">What's wrong?</label>
+      <input type="text" id="i-title" placeholder="Drywall damage — master closet">
+    </div>
+    <div class="q">
+      <label class="qtext" for="i-desc">Any detail worth adding?</label>
+      <textarea id="i-desc" placeholder="Corner bead crushed about 3 feet up, roughly 18 inches of damage"></textarea>
+    </div>
+    <div class="q">
+      <span class="qtext">Who owns it?</span>
+      <div class="seg" id="i-party"></div>
+    </div>
+    <div class="q">
+      <span class="qtext">How serious?</span>
+      <div class="seg" id="i-sev"></div>
+    </div>
+    <div class="q">
+      <label class="qtext" for="i-date">Fixed by when?</label>
+      <input type="date" id="i-date">
+    </div>
+  </div>
+  <div class="footer">
+    <div class="footer-inner">
+      <button class="btn flag" id="sheet-save">Save issue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CONFIG
+   Leave apiBase empty to run on demo data.
+   Set it to your Cloudflare Worker URL to go live.
+   ═══════════════════════════════════════════════════════════ */
+const CONFIG = {
+  apiBase: ""    // e.g. "https://paragon-walks.yourname.workers.dev"
+                 // leave empty to run on demo data
+};
+
+/* Airtable field names. Rename here if you rename in Airtable. */
+const F = {
+  job:"Job", pm:"PM", date:"Walk Date",
+  priorIssues:"Prior Issues Verified", expected:"Expected vs Actual", decisions:"Open Client Decisions",
+  clean:"Site Clean and Organized", protected:"Surfaces Protected",
+  everyRoom:"Every Room Walked", damage:"Damage Since Last Walk", approve:"Would Brandon Approve",
+  paint:"Paint and Touch-Up", trim:"Trim and Finish Carpentry", fixtures:"Fixtures Installed and Working",
+  flooring:"Flooring", cabinets:"Cabinets and Hardware", photos:"Photos",
+  schedStatus:"Schedule Status", schedDetail:"Schedule Detail", materials:"Materials Onsite",
+  prevTrade:"Previous Trade Complete", nextTrade:"Next Trade Ready", blocking:"What Is Blocking",
+  tradesAsked:"Talked to Trades Onsite", tradesSaid:"What Trades Said", inspections:"Inspections",
+  clientUpdated:"Client Last Updated", updateSent:"Update Sent", clientActions:"Client Action Items",
+  risk:"Biggest Risk Right Now", schedUpdated:"Schedule Updated", nextWalk:"Next Walk Date",
+  forBrandon:"Anything Brandon Should See"
+};
+
+const PARTIES = ["Framing","Electrical","Plumbing","HVAC","Drywall","Paint","Tile","Cabinets",
+  "Flooring","Roofing","Concrete","Landscape","Cleaning","Paragon internal","Other"];
+const SEVERITY = ["Minor","Needs fixing","Stop work"];
+
+/* ── the walk, as six sections ─────────────────────────────── */
+const SECTIONS = [
+  { title:"Before you start",
+    lede:"Everything you should already know walking in the door.",
+    qs:[
+      {f:F.priorIssues, q:"Were last week's open issues fixed?",
+       opts:["All verified","Some still open","No prior issues"], flag:["Some still open"]},
+      {f:F.expected, q:"What should have been finished since your last visit, and was it?",
+       type:"text", hint:"A sentence is plenty. This is the one Brandon reads first."},
+      {f:F.decisions, q:"Any client questions, decisions, or change orders still open?",
+       type:"text", hint:"Write \u201cnone\u201d if everything's clear."}
+    ]},
+  { title:"Walk the site",
+    lede:"Every room, every work area. Extra time on anything finished this week.",
+    qs:[
+      {f:F.clean, q:"Is the site clean and organized?", opts:["Yes","No"], flag:["No"]},
+      {f:F.protected, q:"Are finished surfaces protected?", opts:["Yes","No"], flag:["No"]},
+      {f:F.everyRoom, q:"Did you walk every room today?", opts:["Yes","No"], flag:["No"]},
+      {f:F.damage, q:"Any damage to finished surfaces since last week?",
+       opts:["None found","Damage found"], flag:["Damage found"]},
+      {f:F.approve, q:"Would Brandon approve the work done since your last walk?",
+       opts:["Yes","No"], flag:["No"]},
+      {f:F.paint, q:"Paint and touch-up", opts:["Acceptable","Not yet complete","Defects found"], flag:["Defects found"]},
+      {f:F.trim, q:"Trim, caulk, finish carpentry", opts:["Acceptable","Not yet complete","Defects found"], flag:["Defects found"]},
+      {f:F.fixtures, q:"Fixtures installed and working", opts:["Acceptable","Not yet complete","Defects found"], flag:["Defects found"]},
+      {f:F.flooring, q:"Flooring", opts:["Acceptable","Not yet complete","Defects found"], flag:["Defects found"]},
+      {f:F.cabinets, q:"Cabinets and hardware", opts:["Acceptable","Not yet complete","Defects found"], flag:["Defects found"]},
+      {f:F.photos, q:"Progress photos", type:"photos"}
+    ]},
+  { title:"Is the job ready to move",
+    lede:"Compare what you saw to the schedule. Then go talk to whoever's on site.",
+    qs:[
+      {f:F.schedStatus, q:"Against the current schedule, this job is",
+       opts:["On schedule","Behind","Ahead"], flag:["Behind"]},
+      {f:F.schedDetail, q:"What slipped, how many days, and how do we get it back?",
+       type:"text", showIf:{f:F.schedStatus, is:"Behind"}},
+      {f:F.materials, q:"Materials for the next work onsite, correct, undamaged?",
+       opts:["Yes","Missing or wrong","N/A"], flag:["Missing or wrong"]},
+      {f:F.prevTrade, q:"Is the previous trade completely finished?",
+       opts:["Yes","No","N/A"], flag:["No"]},
+      {f:F.nextTrade, q:"Can the next trade start without waiting on anything?",
+       opts:["Yes","Blocked"], flag:["Blocked"]},
+      {f:F.blocking, q:"What's holding them up?", type:"text",
+       showIf:{f:F.nextTrade, is:"Blocked"}},
+      {f:F.tradesAsked, q:"Did you ask the trades on site what they're waiting on?",
+       opts:["Yes","No trades onsite today"]},
+      {f:F.tradesSaid, q:"What did they tell you?", type:"text",
+       hint:"Materials, information, another trade, a decision — their words.",
+       showIf:{f:F.tradesAsked, is:"Yes"}},
+      {f:F.inspections, q:"Required inspections",
+       opts:["Passed","Scheduled","Not scheduled","None required"], flag:["Not scheduled"]}
+    ]},
+  { title:"The client",
+    lede:"Nobody should go more than 48 hours without hearing from us.",
+    qs:[
+      {f:F.clientUpdated, q:"Has the client heard from us in the last 48 hours?",
+       opts:["Yes","No - sending today"]},
+      {f:F.updateSent, q:"Progress video sent", type:"check",
+       showIf:{f:F.clientUpdated, is:"No - sending today"}},
+      {f:F.clientActions, q:"What does the client need to decide or do this week?", type:"text"}
+    ]},
+  { title:"Before you leave",
+    lede:"Close it out so next week starts clean.",
+    qs:[
+      {f:F.risk, q:"What's the biggest risk on this job right now?", type:"text",
+       hint:"If Brandon reads one thing from this walk, make it this."},
+      {f:F.schedUpdated, q:"The schedule is current and reflects what I saw today", type:"check"},
+      {f:F.nextWalk, q:"When's the next walk?", type:"date"},
+      {f:F.forBrandon, q:"Anything else Brandon should see?", type:"text", hint:"Optional."}
+    ]}
+];
+
+/* ── demo data ─────────────────────────────────────────────── */
+const DEMO_JOBS = [
+  {id:"d1", name:"2025-02-06 GRIFFIN - Remodel",     pm:"Seth",    open:4, days:7, health:"flag"},
+  {id:"d2", name:"2024-11-12 GILSON - Remodel",      pm:"Seth",    open:1, days:6, health:"ok"},
+  {id:"d3", name:"2025-06-12 HIDEOUT 4 - Residence", pm:"Carlos",  open:2, days:8, health:"due"},
+  {id:"d4", name:"2026-05-06 SCHUMACHER - commerical ti", pm:"Brandon", open:0, days:4, health:"ok"}
+];
+
+/* Folder strings stay canonical on the back end. This is what a
+   PM actually reads: "2025-02-06 GRIFFIN - Remodel" → "Griffin". */
+function shortName(full){
+  const noDate = String(full || "").replace(/^\d{4}-\d{1,2}-\d{1,2}\s+/, "");
+  const name = noDate.split(" - ")[0].trim();
+  return name.replace(/\S+/g, w =>
+    /^\d+$/.test(w) ? w : w[0].toUpperCase() + w.slice(1).toLowerCase());
+}
+function jobType(full){
+  const t = String(full || "").split(" - ")[1] || "";
+  return t.trim().replace(/^\w/, c => c.toUpperCase());
+}
+
+/* ── state ─────────────────────────────────────────────────── */
+let jobs = [], job = null, step = 0, answers = {}, issues = [], photos = [];
+let pendingField = null, pendingPhoto = null;
+let currentPM = null;
+const live = () => !!CONFIG.apiBase;
+const $ = id => document.getElementById(id);
+
+/* ── api ───────────────────────────────────────────────────── */
+async function api(path, opts){
+  const r = await fetch(CONFIG.apiBase + path, {
+    headers:{"Content-Type":"application/json"}, ...opts
+  });
+  if(!r.ok) throw new Error("Request failed (" + r.status + ")");
+  return r.json();
+}
+
+async function loadJobs(){
+  if(!live()){
+    $("demo-banner").hidden = false;
+    jobs = DEMO_JOBS;
+    return currentPM ? renderJobs() : renderPeople();
+  }
+  try{
+    const data = await api("/jobs");
+    jobs = data.records.map(r => ({
+      id:r.id,
+      name:r.fields["Job Name"],
+      pm:r.fields["Assigned PM"],
+      open:r.fields["Open Issues"] || 0,
+      overdue:r.fields["Overdue Issues"] || 0,
+      days:r.fields["Days Since Walk"] ?? 999,
+      health:(r.fields["Overdue Issues"] > 0) ? "flag"
+            :(r.fields["Days Since Walk"] > 7) ? "due" : "ok"
+    }));
+    currentPM ? renderJobs() : renderPeople();
+  }catch(e){
+    $("joblist").innerHTML =
+      '<div class="empty"><p>Couldn\'t reach Airtable.</p>' +
+      '<p style="font-size:14px">' + e.message + '</p>' +
+      '<button class="btn ghost" onclick="location.reload()">Try again</button></div>';
+  }
+}
+
+function renderPeople(){
+  const names = [...new Set(jobs.map(j => j.pm).filter(Boolean))];
+  const people = names.length ? names : ["Seth","Carlos","Brandon"];
+  $("pmlist").innerHTML = people.map(n => {
+    const count = jobs.filter(j => j.pm === n).length;
+    return `<button class="person" data-pm="${esc(n)}">
+      <div class="job-name">${esc(n)}</div>
+      <div class="job-pm">${count} active ${count === 1 ? "job" : "jobs"}</div>
+    </button>`;
+  }).join("");
+  document.querySelectorAll("#pmlist .person").forEach(el => el.onclick = () => {
+    currentPM = el.dataset.pm; show("s-jobs"); renderJobs();
+  });
+}
+
+function renderJobs(){
+  const mine = jobs.filter(j => j.pm === currentPM);
+  const list = mine.length ? mine : jobs;
+  $("who-label").textContent = currentPM;
+  $("today").textContent = " · " + new Date().toLocaleDateString(undefined,{month:"long", day:"numeric"});
+  if(!list.length){
+    $("joblist").innerHTML = '<div class="empty">No active jobs assigned to you right now.</div>';
+    return;
+  }
+  $("joblist").innerHTML = list.map(j => `
+    <button class="job" data-health="${j.health}" data-id="${j.id}">
+      <div class="job-name">${esc(shortName(j.name))}</div>
+      <div class="job-pm">${esc(jobType(j.name) || "Project")}</div>
+      <div class="job-stats">
+        <div class="stat ${j.open ? "flagged" : ""}">
+          <div class="n">${j.open}</div><div class="l">open ${j.open === 1 ? "issue" : "issues"}</div>
+        </div>
+        <div class="stat">
+          <div class="n">${j.days > 900 ? "—" : j.days}</div>
+          <div class="l">days since walk</div>
+        </div>
+      </div>
+    </button>`).join("");
+  document.querySelectorAll("#joblist .job").forEach(el =>
+    el.onclick = () => startWalk(jobs.find(j => j.id === el.dataset.id)));
+}
+
+/* ── walk ──────────────────────────────────────────────────── */
+function startWalk(j){
+  if(!j) return;
+  job = j; step = 0; answers = {}; issues = []; photos = [];
+  show("s-walk"); renderStep();
+}
+
+function visible(qs){
+  return qs.filter(q => !q.showIf || answers[q.showIf.f] === q.showIf.is);
+}
+
+function renderStep(keepScroll){
+  const y = window.scrollY;
+  const s = SECTIONS[step];
+  $("walk-job").textContent = shortName(job.name);
+  $("walk-count").textContent = (step + 1) + " / " + SECTIONS.length;
+  $("rail").innerHTML = SECTIONS.map((_, i) =>
+    `<span class="${i < step ? "done" : i === step ? "now" : ""}"></span>`).join("");
+
+  let html = `<h2>${s.title}</h2><p class="lede">${s.lede}</p>`;
+  visible(s.qs).forEach(q => html += renderQ(q));
+  $("walk-body").innerHTML = html;
+
+  $("prev-btn").style.visibility = step === 0 ? "hidden" : "visible";
+  $("next-btn").textContent = step === SECTIONS.length - 1 ? "Finish walk" : "Continue";
+  wireStep();
+  window.scrollTo(0, keepScroll ? y : 0);
+}
+
+function renderQ(q){
+  const val = answers[q.f];
+  const flagged = q.flag && q.flag.includes(val);
+  let control = "";
+
+  if(q.type === "text"){
+    control = `<textarea data-f="${q.f}" placeholder="">${esc(val || "")}</textarea>`;
+  } else if(q.type === "date"){
+    control = `<input type="date" data-f="${q.f}" value="${val || ""}">`;
+  } else if(q.type === "check"){
+    control = `<button class="check" data-check="${q.f}" aria-pressed="${val ? "true" : "false"}">
+      <span class="box">${val ? "✓" : ""}</span><span>${q.q}</span></button>`;
+  } else if(q.type === "photos"){
+    control = `<button class="check" id="add-photos">
+      <span class="box">${photos.length || ""}</span>
+      <span>${photos.length ? photos.length + " photo" + (photos.length === 1 ? "" : "s") + " added" : "Add progress photos"}</span>
+    </button>`;
+  } else {
+    control = `<div class="seg">` + q.opts.map(o =>
+      `<button data-f="${q.f}" data-v="${esc(o)}" data-flag="${q.flag && q.flag.includes(o) ? 1 : 0}"
+        aria-pressed="${val === o ? "true" : "false"}">${esc(o)}</button>`).join("") + `</div>`;
+  }
+
+  const label = q.type === "check" ? "" : `<span class="qtext">${esc(q.q)}</span>`;
+  const hint  = q.hint ? `<div class="hint">${esc(q.hint)}</div>` : "";
+  const found = issues.filter(i => i.field === q.f);
+  const red = flagged ? `
+    <div class="redline">
+      <p>${found.length ? "Logged on this walk" : "Nothing goes to Brandon without a photo. Log what you found."}</p>
+      ${found.length ? `<div class="logged">${found.map(i => `
+        <div class="logged-item">
+          ${i.photo ? `<img class="thumb" src="${i.photo}" alt="">` : `<span class="thumb"></span>`}
+          <span><span>${esc(i.title)}</span><br><span class="who">${esc(i.party)} · due ${i.due || "no date"}</span></span>
+        </div>`).join("")}</div>` : ""}
+      <button class="btn flag" data-issue="${q.f}">${found.length ? "Log another" : "Log an issue"}</button>
+    </div>` : "";
+
+  return `<div class="q ${flagged ? "flagged" : ""}">${label}${control}${hint}${red}</div>`;
+}
+
+function wireStep(){
+  $("walk-body").querySelectorAll(".seg button").forEach(b => b.onclick = () => {
+    answers[b.dataset.f] = b.dataset.v; renderStep(true);
+  });
+  $("walk-body").querySelectorAll("[data-check]").forEach(b => b.onclick = () => {
+    answers[b.dataset.check] = !answers[b.dataset.check]; renderStep(true);
+  });
+  $("walk-body").querySelectorAll("textarea,input[type=date]").forEach(el => {
+    el.oninput = () => { answers[el.dataset.f] = el.value; };
+  });
+  $("walk-body").querySelectorAll("[data-issue]").forEach(b => b.onclick = () => openSheet(b.dataset.issue));
+  const ap = $("add-photos");
+  if(ap) ap.onclick = () => { pendingField = "walkphotos"; $("photo").click(); };
+}
+
+$("next-btn").onclick = () => {
+  if(step === SECTIONS.length - 1) return finish();
+  step++; renderStep();
+};
+$("prev-btn").onclick = () => { if(step > 0){ step--; renderStep(); } };
+$("walk-back").onclick = () => {
+  if(!confirm("Leave this walk? Nothing is saved yet.")) return;
+  job = null; step = 0; answers = {}; issues = []; photos = [];
+  show("s-jobs"); renderJobs();
+};
+
+/* ── issue sheet ───────────────────────────────────────────── */
+function openSheet(field){
+  pendingField = field; pendingPhoto = null;
+  $("i-title").value = ""; $("i-desc").value = ""; $("i-date").value = "";
+  $("shoot").innerHTML = `<span style="font-size:30px">📷</span><span>Take a photo</span>
+    <span class="sub">Required — this is what the sub gets sent</span>`;
+  $("i-party").innerHTML = PARTIES.map(p =>
+    `<button data-v="${p}" aria-pressed="false">${p}</button>`).join("");
+  $("i-sev").innerHTML = SEVERITY.map(s =>
+    `<button data-v="${s}" data-flag="${s === "Stop work" ? 1 : 0}" aria-pressed="false">${s}</button>`).join("");
+  [...$("i-party").children, ...$("i-sev").children].forEach(b => b.onclick = () => {
+    [...b.parentElement.children].forEach(x => x.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true");
+  });
+  $("sheet").classList.add("on");
+}
+
+$("photo").onchange = e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    if(pendingField === "walkphotos"){ photos.push(reader.result); renderStep(true); }
+    else {
+      pendingPhoto = reader.result;
+      $("shoot").innerHTML = `<img src="${reader.result}" alt="Photo of the issue">
+        <span class="sub">Tap to retake</span>`;
+    }
+    e.target.value = "";
+  };
+  reader.readAsDataURL(file);
+};
+
+$("sheet-cancel").onclick = () => $("sheet").classList.remove("on");
+$("sheet-save").onclick = () => {
+  const title = $("i-title").value.trim();
+  const party = $("i-party").querySelector('[aria-pressed="true"]');
+  if(!title){ alert("Add a short title so the sub knows what they're fixing."); return; }
+  if(!party){ alert("Pick who owns this."); return; }
+  issues.push({
+    field:pendingField, title, party:party.dataset.v,
+    desc:$("i-desc").value.trim(),
+    severity:($("i-sev").querySelector('[aria-pressed="true"]') || {dataset:{v:"Needs fixing"}}).dataset.v,
+    due:$("i-date").value, photo:pendingPhoto
+  });
+  $("sheet").classList.remove("on");
+  renderStep(true);
+};
+
+/* ── finish ────────────────────────────────────────────────── */
+function flagCount(){
+  let n = 0;
+  SECTIONS.forEach(s => s.qs.forEach(q => {
+    if(q.flag && q.flag.includes(answers[q.f])) n++;
+  }));
+  return n;
+}
+
+async function finish(){
+  const flags = flagCount();
+  $("next-btn").disabled = true;
+  $("next-btn").textContent = "Saving…";
+
+  if(live()){
+    try{
+      await api("/walk", { method:"POST", body: JSON.stringify({
+        job: job.id, pm: currentPM, answers, issues, photos
+      })});
+    }catch(e){
+      $("next-btn").disabled = false;
+      $("next-btn").textContent = "Finish walk";
+      alert("Couldn't save: " + e.message + "\n\nYour answers are still here. Try again when you have signal.");
+      return;
+    }
+  }
+
+  $("done-job").textContent = shortName(job.name);
+  $("done-line").textContent = flags
+    ? "Brandon sees the flags on his dashboard now."
+    : "Clean walk. Nothing outstanding on this job.";
+  $("tally-issues").textContent = issues.length;
+  $("tally-flags").textContent = flags;
+  $("next-btn").disabled = false;
+  $("next-btn").textContent = "Finish walk";
+  show("s-done");
+}
+
+$("done-btn").onclick = () => { show("s-jobs"); loadJobs(); };
+$("switch-pm").onclick = () => { currentPM = null; show("s-who"); renderPeople(); };
+
+/* ── util ──────────────────────────────────────────────────── */
+function show(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("on"));
+  $(id).classList.add("on");
+  window.scrollTo(0, 0);
+}
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+loadJobs();
+</script>
+</body>
+</html>
