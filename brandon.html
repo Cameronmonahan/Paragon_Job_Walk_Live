@@ -103,6 +103,39 @@ button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
 .btn.done{background:var(--gold-wash);border-color:var(--rule);color:var(--ink-soft)}
 .empty{padding:60px var(--pad);text-align:center;color:var(--ink-soft)}
 .screen{display:none}.screen.on{display:block}
+
+/* tabs */
+.tabs{display:flex;gap:26px;padding:20px var(--pad) 0;border-bottom:1px solid var(--rule)}
+.tab{background:none;border:0;padding:0 0 12px;font-size:16px;font-weight:500;
+  color:var(--ink-faint);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+
+/* month view */
+.monthpick{display:flex;gap:9px;padding:22px var(--pad) 0;flex-wrap:wrap}
+.monthpick button{background:var(--paper-raised);border:1.5px solid var(--rule);
+  border-radius:var(--radius);padding:9px 15px;font-weight:500}
+.monthpick button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.section-h{padding:26px var(--pad) 10px;font-size:13px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+.pmcard{background:var(--paper-raised);border:1px solid var(--rule);
+  border-left:5px solid var(--gold);border-radius:var(--radius);
+  padding:17px 18px;margin:0 var(--pad) 12px}
+.pmcard h4{margin:0 0 13px;font-size:19px;font-weight:600;letter-spacing:-.01em}
+.pmstats{display:flex;gap:26px;flex-wrap:wrap}
+.pmstat .n{font-size:23px;font-weight:600;line-height:1}
+.pmstat .l{font-size:12px;color:var(--ink-faint);margin-top:3px}
+.pmstat.warn .n{box-shadow:inset 0 -.3em 0 var(--buff)}
+.wrow{display:block;width:100%;text-align:left;background:var(--paper-raised);
+  border:1px solid var(--rule);border-left:4px solid var(--buff-edge);
+  border-radius:var(--radius);padding:14px 16px;margin:0 var(--pad) 11px}
+.wrow .top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.wrow .jn{font-weight:600;font-size:17px}
+.wrow .dt{font-size:13.5px;color:var(--ink-faint);white-space:nowrap}
+.wrow.muted{border-left-color:var(--rule);opacity:.65}
+.wrow .chips{margin-top:9px;display:flex;flex-wrap:wrap;gap:6px}
+.wrow .chip{background:var(--buff-wash);border:1px solid var(--buff-edge);
+  border-radius:3px;padding:3px 9px;font-size:13px}
+.note{padding:0 var(--pad) 8px;font-size:13.5px;color:var(--ink-faint);max-width:52ch;line-height:1.5}
 </style>
 </head>
 <body>
@@ -116,10 +149,20 @@ button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
 </div>
 
 <div class="wrap">
+  <div class="tabs">
+    <button class="tab on" data-tab="s-list">Now</button>
+    <button class="tab" data-tab="s-month">By month</button>
+  </div>
+
   <section class="screen on" id="s-list">
     <div class="verdict" id="verdict"></div>
     <div class="counts" id="counts"></div>
     <div class="jobs" id="jobs"></div>
+  </section>
+
+  <section class="screen" id="s-month">
+    <div class="monthpick" id="monthpick"></div>
+    <div id="month-body"></div>
   </section>
 
   <section class="screen" id="s-detail">
@@ -180,7 +223,7 @@ async function load(){
     {weekday:"long", month:"long", day:"numeric"});
   try{
     const [j, w, i] = await Promise.all([
-      api("/jobs"), api("/walks?limit=60"), api("/all-issues")
+      api("/jobs"), api("/walks?limit=200"), api("/all-issues")
     ]);
     jobs = j.records || [];
     walks = w.records || [];
@@ -228,10 +271,15 @@ function render(){
     const open = f["Open Issues"] || 0;
     const overdue = f["Overdue Issues"] || 0;
     const clientDays = f["Days Since Client Update"] ?? 999;
-    const health = (overdue > 0 || flags.length) ? "warn"
+    const reviewed = !!wf["Brandon Reviewed"];
+    // A flag is a fact about the walk and never goes away. What changes is
+    // whether it still needs Brandon — once he's seen it and nothing is open,
+    // the job is off his list.
+    const health = (overdue > 0) ? "warn"
+                 : (flags.length && !reviewed) ? "warn"
                  : (days > 7) ? "stale" : "ok";
     return {id:j.id, name, pm:f["Assigned PM"] || "Unassigned", days, open, overdue,
-            clientDays, flags, walk:w, health};
+            clientDays, flags, walk:w, health, reviewed};
   });
 
   rows.sort((a,b) => ({warn:0,stale:1,ok:2}[a.health] - {warn:0,stale:1,ok:2}[b.health]));
@@ -258,7 +306,9 @@ function render(){
     const bits = [];
     if(r.open) bits.push(`<b>${r.open}</b> open ${r.open === 1 ? "issue" : "issues"}`);
     if(r.overdue) bits.push(`<span class="flagbit">${r.overdue} past due</span>`);
-    if(r.flags.length) bits.push(`<span class="flagbit">${r.flags.length} flagged</span>`);
+    if(r.flags.length) bits.push(r.reviewed
+      ? `${r.flags.length} flagged (reviewed)`
+      : `<span class="flagbit">${r.flags.length} flagged</span>`);
     bits.push(r.days > 900 ? "never walked"
       : r.days === 0 ? "walked today" : `walked ${r.days}d ago`);
     if(r.clientDays > 4 && r.clientDays < 900) bits.push(`client quiet ${r.clientDays}d`);
@@ -278,17 +328,28 @@ function render(){
 }
 
 function openJob(r){
-  $("d-name").textContent = shortName(r.name);
-  $("d-sub").textContent = r.pm + (r.walk
-    ? " · last walked " + (r.walk.fields["Walk Date"] || "")
+  openWalk(r.walk, jobs.find(j => j.id === r.id), r);
+}
+
+/* Any walk, current or historical. `row` is the list row when we have it. */
+function openWalk(walk, jobRec, row){
+  const jobId = jobRec ? jobRec.id : (walk && (walk.fields["Job"] || [])[0]);
+  const jobName = jobRec ? jobRec.fields["Job Name"] : (row && row.name) || "";
+  const pm = (walk && walk.fields["PM"]) ||
+             (jobRec && jobRec.fields["Assigned PM"]) || "Unassigned";
+
+  $("d-name").textContent = shortName(jobName);
+  $("d-sub").textContent = pm + (walk
+    ? " · walked " + (walk.fields["Walk Date"] || "")
     : " · no walk recorded");
 
-  if(!r.walk){
+  if(!walk){
     $("d-body").innerHTML = '<div class="empty">No walk has been submitted for this job yet.</div>';
     return show("s-detail");
   }
 
-  const f = r.walk.fields;
+  const r = { id:jobId, name:jobName, pm, walk };
+  const f = walk.fields;
   const flags = flagsOn(f);
   const notes = [
     ["What should have been done since last visit", f["Expected vs Actual"]],
@@ -301,7 +362,7 @@ function openJob(r){
     ["Anything else for you", f["Anything Brandon Should See"]]
   ].filter(([,v]) => v && String(v).trim());
 
-  const openList = issuesFor(r.id);
+  const openList = issuesFor(jobId);
 
   let html = "";
 
@@ -343,17 +404,142 @@ function openJob(r){
   if(rb && !reviewed) rb.onclick = async () => {
     rb.disabled = true; rb.textContent = "Saving…";
     try{
-      await fetch(CONFIG.apiBase + "/review", {
+      const resp = await fetch(CONFIG.apiBase + "/review", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ id:r.walk.id, reviewed:true })
       });
+      if(!resp.ok) throw new Error("server said " + resp.status);
       rb.className = "btn done"; rb.textContent = "Reviewed";
-    }catch(e){ rb.disabled = false; rb.textContent = "Mark reviewed"; }
+      // update in place so the list is right when he backs out
+      const w = walks.find(x => x.id === r.walk.id);
+      if(w) w.fields["Brandon Reviewed"] = true;
+      render();
+    }catch(e){
+      rb.disabled = false; rb.textContent = "Mark reviewed";
+      alert("Couldn't save that: " + e.message);
+    }
   };
   show("s-detail");
 }
 
-$("back").onclick = () => { show("s-list"); window.scrollTo(0,0); };
+
+/* ── month review ─────────────────────────────────────────────
+   Deliberately not a flag leaderboard. A PM who finds more problems
+   is doing the job, not failing at it. What's worth measuring is
+   whether walks happened and whether promised fixes landed. */
+
+let monthOffset = 0;   // 0 = this month, 1 = last, 2 = the one before
+
+const monthKey = d => String(d).slice(0, 7);
+function monthFor(offset){
+  const d = new Date();
+  d.setDate(1); d.setMonth(d.getMonth() - offset);
+  return { key: d.toISOString().slice(0, 7),
+           label: d.toLocaleDateString(undefined, {month:"long", year:"numeric"}) };
+}
+
+function renderMonth(){
+  const m = monthFor(monthOffset);
+
+  $("monthpick").innerHTML = [0,1,2].map(o => {
+    const mm = monthFor(o);
+    return '<button data-mo="' + o + '" aria-pressed="' + (o === monthOffset) + '">' +
+      esc(mm.label) + '</button>';
+  }).join("");
+  $("monthpick").querySelectorAll("[data-mo]").forEach(b => b.onclick = () => {
+    monthOffset = +b.dataset.mo; renderMonth();
+  });
+
+  const jobById = Object.fromEntries(jobs.map(j => [j.id, j.fields["Job Name"]]));
+  const inMonth = walks.filter(w => monthKey(w.fields["Walk Date"]) === m.key);
+  const walkById = Object.fromEntries(inMonth.map(w => [w.id, w]));
+  const walkIds = new Set(inMonth.map(w => w.id));
+
+  const raised = allIssues.filter(i =>
+    (i.fields["Logged On Walk"] || []).some(id => walkIds.has(id)));
+  const still = raised.filter(isOpen);
+  const done  = raised.filter(i => !isOpen(i));
+  const unreviewed = inMonth.filter(w =>
+    flagsOn(w.fields).length && !w.fields["Brandon Reviewed"]);
+
+  if(!inMonth.length){
+    $("month-body").innerHTML = '<div class="empty">No walks recorded in ' + esc(m.label) + '.</div>';
+    return;
+  }
+
+  let html = '<div class="verdict">' + (
+    still.length || unreviewed.length
+      ? '<span class="hl">' + (still.length + unreviewed.length) +
+        (still.length + unreviewed.length === 1 ? ' thing still needs' : ' things still need') +
+        ' closing out.</span>'
+      : 'Everything raised in ' + esc(m.label) + ' has been handled.'
+  ) + '</div>';
+
+  const jobOf = i => shortName(jobById[(i.fields["Job"] || [])[0]] || "");
+  const walkOf = i => (i.fields["Logged On Walk"] || [])[0];
+
+  const issueRowBtn = (i, muted) => {
+    const f = i.fields;
+    const meta = [jobOf(i), f["Responsible Party"] || "Unassigned",
+      f["Promised Fix Date"] ? "due " + f["Promised Fix Date"] : null
+    ].filter(Boolean).join(" \u00b7 ");
+    return '<button class="wrow' + (muted ? " muted" : "") + '" data-walk="' + walkOf(i) + '">' +
+      '<div class="top"><span class="jn">' + esc(f["Issue"]) + '</span>' +
+      (f["Overdue"] === "Overdue" ? '<span class="late">Past due</span>' :
+       muted ? '<span class="dt">Fixed</span>' : '') + '</div>' +
+      '<div class="dt" style="margin-top:6px">' + esc(meta) + '</div></button>';
+  };
+
+  if(still.length){
+    html += '<div class="section-h">Still open (' + still.length + ')</div>';
+    html += still.map(i => issueRowBtn(i, false)).join("");
+  }
+
+  if(unreviewed.length){
+    html += '<div class="section-h">Walks you haven\u2019t reviewed (' + unreviewed.length + ')</div>';
+    html += unreviewed.map(w => {
+      const jid = (w.fields["Job"] || [])[0];
+      return '<button class="wrow" data-walk="' + w.id + '">' +
+        '<div class="top"><span class="jn">' + esc(shortName(jobById[jid] || "")) + '</span>' +
+        '<span class="dt">' + esc(w.fields["PM"] || "") + ' \u00b7 ' + esc(w.fields["Walk Date"] || "") + '</span></div>' +
+        '<div class="chips">' + flagsOn(w.fields).map(x =>
+          '<span class="chip">' + esc(x) + '</span>').join("") + '</div></button>';
+    }).join("");
+  }
+
+  if(done.length){
+    html += '<div class="section-h">Handled (' + done.length + ')</div>';
+    html += done.map(i => issueRowBtn(i, true)).join("");
+  }
+
+  html += '<div class="section-h">The month</div>' +
+    '<div class="note">' + inMonth.length + ' walk' + (inMonth.length === 1 ? "" : "s") +
+    ' across ' + new Set(inMonth.map(w => (w.fields["Job"] || [])[0])).size + ' job' +
+    (new Set(inMonth.map(w => (w.fields["Job"] || [])[0])).size === 1 ? "" : "s") +
+    ' \u00b7 ' + raised.length + ' issue' + (raised.length === 1 ? "" : "s") + ' raised \u00b7 ' +
+    done.length + ' closed out.</div>';
+
+  $("month-body").innerHTML = html;
+  $("month-body").querySelectorAll("[data-walk]").forEach(b => b.onclick = () => {
+    const w = walks.find(x => x.id === b.dataset.walk);
+    if(!w) return;
+    const j = jobs.find(x => x.id === (w.fields["Job"] || [])[0]);
+    openWalk(w, j);
+  });
+}
+
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("on"));
+  t.classList.add("on");
+  show(t.dataset.tab);
+  if(t.dataset.tab === "s-month") renderMonth();
+});
+
+$("back").onclick = () => {
+  const active = document.querySelector(".tab.on");
+  show(active ? active.dataset.tab : "s-list");
+  window.scrollTo(0,0);
+};
 
 function show(id){
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("on"));
