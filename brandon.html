@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#303030">
+<title>Paragon — Job status</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Same Paragon palette as the walk app. Desert Storm paper,
+   Mineshaft Black type, Bitter Gold accent, Buff Yellow for
+   anything that needs Brandon's eye. */
+:root{
+  --paper:#F1F1EE; --paper-raised:#FFFFFF;
+  --ink:#303030; --ink-soft:#5C5C5C; --ink-faint:#8C8C8C;
+  --gold:#8A8C79; --gold-wash:#EAEBE5;
+  --buff:#F4D185; --buff-wash:#FDF6E7; --buff-edge:#E8C273;
+  --rule:#DCDCD6; --radius:4px; --pad:22px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);
+  font-family:'Archivo',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.45;
+  -webkit-font-smoothing:antialiased}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.wrap{max-width:880px;margin:0 auto;padding-bottom:70px}
+
+/* masthead */
+.top{background:var(--ink);color:var(--paper);
+  padding:calc(env(safe-area-inset-top) + 26px) var(--pad) 26px}
+.top .inner{max-width:880px;margin:0 auto}
+.top img{height:34px;margin-bottom:14px;display:block}
+.top h1{margin:0;font-size:15px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gold)}
+.top p{margin:4px 0 0;font-size:29px;font-weight:600;letter-spacing:-.02em}
+.top .date{font-size:15px;font-weight:400;color:#A6A6A0}
+
+/* the headline: one sentence Brandon reads first */
+.verdict{padding:26px var(--pad) 8px;font-size:21px;font-weight:500;
+  letter-spacing:-.01em;max-width:40ch;line-height:1.35}
+.verdict .hl{box-shadow:inset 0 -.5em 0 var(--buff)}
+
+/* counters */
+.counts{display:flex;gap:34px;padding:16px var(--pad) 26px;flex-wrap:wrap}
+.count .n{font-size:30px;font-weight:600;line-height:1}
+.count .l{font-size:12.5px;color:var(--ink-faint);margin-top:4px}
+.count.warn .n{box-shadow:inset 0 -.32em 0 var(--buff)}
+
+/* job rows */
+.jobs{padding:0 var(--pad)}
+.jobrow{display:block;width:100%;text-align:left;background:var(--paper-raised);
+  border:1px solid var(--rule);border-left:5px solid var(--gold);
+  border-radius:var(--radius);padding:17px 18px;margin-bottom:12px}
+.jobrow[data-h="warn"]{border-left-color:var(--buff-edge)}
+.jobrow[data-h="stale"]{border-left-color:var(--ink-faint)}
+.jr-top{display:flex;justify-content:space-between;gap:14px;align-items:baseline}
+.jr-name{font-size:19px;font-weight:600;letter-spacing:-.01em}
+.jr-pm{font-size:14px;color:var(--ink-faint);white-space:nowrap}
+.jr-line{margin-top:9px;font-size:14.5px;color:var(--ink-soft)}
+.jr-line b{font-weight:600;color:var(--ink)}
+.jr-line .flagbit{box-shadow:inset 0 -.35em 0 var(--buff);font-weight:600;color:var(--ink)}
+.jr-risk{margin-top:11px;padding-top:11px;border-top:1px solid var(--rule);
+  font-size:15px;line-height:1.4}
+.jr-risk span{color:var(--ink-faint);font-size:12.5px;display:block;margin-bottom:3px}
+
+/* detail */
+.detail{padding:0 var(--pad)}
+.back{background:none;border:0;padding:8px 8px 8px 0;color:var(--gold);
+  font-size:15px;font-weight:500}
+.dhead{padding:20px var(--pad) 0}
+.dhead h2{margin:6px 0 2px;font-size:29px;font-weight:600;letter-spacing:-.025em}
+.dhead .sub{color:var(--ink-faint);font-size:14.5px}
+.block{background:var(--paper-raised);border:1px solid var(--rule);
+  border-radius:var(--radius);padding:18px;margin-bottom:14px}
+.block h3{margin:0 0 14px;font-size:13px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-faint)}
+.qa{margin-bottom:16px}
+.qa:last-child{margin-bottom:0}
+.qa .q{font-size:13px;color:var(--ink-faint);margin-bottom:3px}
+.qa .a{font-size:16px;line-height:1.45}
+.flags{display:flex;flex-wrap:wrap;gap:8px}
+.flagchip{background:var(--buff);border:1px solid var(--buff-edge);
+  border-radius:var(--radius);padding:6px 11px;font-size:14px;font-weight:500}
+.issue{display:flex;gap:13px;padding:13px 0;border-bottom:1px solid var(--rule)}
+.issue:last-child{border-bottom:0;padding-bottom:0}
+.issue img{width:58px;height:58px;object-fit:cover;border-radius:3px;
+  flex:0 0 auto;background:var(--paper)}
+.issue .t{font-weight:600;line-height:1.3}
+.issue .m{font-size:13px;color:var(--ink-faint);margin-top:3px}
+.late{display:inline-block;background:var(--buff);border-radius:3px;
+  padding:1px 7px;font-size:12px;font-weight:600;margin-top:5px}
+.btn{width:100%;min-height:52px;border-radius:var(--radius);font-weight:600;
+  border:1.5px solid var(--ink);background:var(--ink);color:var(--paper)}
+.btn.done{background:var(--gold-wash);border-color:var(--rule);color:var(--ink-soft)}
+.empty{padding:60px var(--pad);text-align:center;color:var(--ink-soft)}
+.screen{display:none}.screen.on{display:block}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="inner">
+    <img src="logo.png" alt="Paragon Homes" onerror="this.remove()">
+    <h1>Paragon</h1>
+    <p>Job status<span class="date" id="date"></span></p>
+  </div>
+</div>
+
+<div class="wrap">
+  <section class="screen on" id="s-list">
+    <div class="verdict" id="verdict"></div>
+    <div class="counts" id="counts"></div>
+    <div class="jobs" id="jobs"></div>
+  </section>
+
+  <section class="screen" id="s-detail">
+    <div class="dhead">
+      <button class="back" id="back">All jobs</button>
+      <h2 id="d-name"></h2>
+      <div class="sub" id="d-sub"></div>
+    </div>
+    <div class="detail" id="d-body"></div>
+  </section>
+</div>
+
+<script>
+const CONFIG = { apiBase: "https://paragon-walks.peakexposure.workers.dev" };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+let jobs = [], walks = [], allIssues = [];
+
+async function api(path){
+  const r = await fetch(CONFIG.apiBase + path);
+  if(!r.ok) throw new Error("Request failed (" + r.status + ")");
+  return r.json();
+}
+
+function shortName(full){
+  const noDate = String(full || "").replace(/^\d{4}-\d{1,2}-\d{1,2}\s+/, "");
+  const name = noDate.split(" - ")[0].trim();
+  return name.replace(/\S+/g, w =>
+    /^\d+$/.test(w) ? w : w[0].toUpperCase() + w.slice(1).toLowerCase());
+}
+
+/* Only answers that indicate a problem. A clean walk shows nothing here,
+   which is the point — Brandon reads exceptions, not transcripts. */
+const FLAGGED = [
+  ["Site Clean and Organized","No","Site not clean"],
+  ["Surfaces Protected","No","Surfaces unprotected"],
+  ["Every Room Walked","No","Not every room walked"],
+  ["Damage Since Last Walk","Damage found","New damage"],
+  ["Would Brandon Approve","No","Work not up to standard"],
+  ["Paint and Touch-Up","Defects found","Paint defects"],
+  ["Trim and Finish Carpentry","Defects found","Trim defects"],
+  ["Fixtures Installed and Working","Defects found","Fixture defects"],
+  ["Flooring","Defects found","Flooring defects"],
+  ["Cabinets and Hardware","Defects found","Cabinet defects"],
+  ["Schedule Status","Behind","Behind schedule"],
+  ["Materials Onsite","Missing or wrong","Materials missing or wrong"],
+  ["Previous Trade Complete","No","Previous trade unfinished"],
+  ["Next Trade Ready","Blocked","Next trade blocked"],
+  ["Inspections","Not scheduled","Inspection not scheduled"]
+];
+const flagsOn = f => FLAGGED.filter(([k,v]) => f[k] === v).map(([,,label]) => label);
+
+async function load(){
+  $("date").textContent = " · " + new Date().toLocaleDateString(undefined,
+    {weekday:"long", month:"long", day:"numeric"});
+  try{
+    const [j, w, i] = await Promise.all([
+      api("/jobs"), api("/walks?limit=60"), api("/open-issues")
+    ]);
+    jobs = j.records || [];
+    walks = w.records || [];
+    allIssues = i.records || [];
+    render();
+  }catch(e){
+    $("jobs").innerHTML = '<div class="empty"><p>Couldn\'t load job data.</p>' +
+      '<p style="font-size:14px">' + esc(e.message) + '</p></div>';
+  }
+}
+
+// /walks comes back newest-first, so the first match is the latest walk.
+const latestWalk = jobId => walks.find(w => (w.fields["Job"] || []).includes(jobId));
+const issuesFor  = jobId => allIssues.filter(i => (i.fields["Job"] || []).includes(jobId));
+
+function render(){
+  const rows = jobs.map(j => {
+    const f = j.fields;
+    const name = f["Job Name"];
+    const w = latestWalk(j.id);
+    const wf = w ? w.fields : {};
+    const flags = w ? flagsOn(wf) : [];
+    const days = f["Days Since Walk"] ?? 999;
+    const open = f["Open Issues"] || 0;
+    const overdue = f["Overdue Issues"] || 0;
+    const clientDays = f["Days Since Client Update"] ?? 999;
+    const health = (overdue > 0 || flags.length) ? "warn"
+                 : (days > 7) ? "stale" : "ok";
+    return {id:j.id, name, pm:f["Assigned PM"] || "Unassigned", days, open, overdue,
+            clientDays, flags, walk:w, health};
+  });
+
+  rows.sort((a,b) => ({warn:0,stale:1,ok:2}[a.health] - {warn:0,stale:1,ok:2}[b.health]));
+
+  const needy = rows.filter(r => r.health !== "ok");
+  $("verdict").innerHTML = needy.length
+    ? `<span class="hl">${needy.length} of ${rows.length} ${needy.length === 1 ? "job needs" : "jobs need"} your attention.</span>`
+    : `All ${rows.length} jobs are on track. Nothing needs you today.`;
+
+  const totOpen = rows.reduce((n,r) => n + r.open, 0);
+  const totLate = rows.reduce((n,r) => n + r.overdue, 0);
+  const noWalk = rows.filter(r => r.days > 7).length;
+  const quiet = rows.filter(r => r.clientDays > 4).length;
+  $("counts").innerHTML = [
+    ["Open issues", totOpen, totOpen > 0],
+    ["Past due", totLate, totLate > 0],
+    ["No walk this week", noWalk, noWalk > 0],
+    ["Clients gone quiet", quiet, quiet > 0]
+  ].map(([l,n,w]) =>
+    `<div class="count ${w ? "warn" : ""}"><div class="n">${n}</div><div class="l">${l}</div></div>`
+  ).join("");
+
+  $("jobs").innerHTML = rows.map(r => {
+    const bits = [];
+    if(r.open) bits.push(`<b>${r.open}</b> open ${r.open === 1 ? "issue" : "issues"}`);
+    if(r.overdue) bits.push(`<span class="flagbit">${r.overdue} past due</span>`);
+    if(r.flags.length) bits.push(`<span class="flagbit">${r.flags.length} flagged</span>`);
+    bits.push(r.days > 900 ? "never walked"
+      : r.days === 0 ? "walked today" : `walked ${r.days}d ago`);
+    if(r.clientDays > 4 && r.clientDays < 900) bits.push(`client quiet ${r.clientDays}d`);
+    const risk = r.walk && r.walk.fields["Biggest Risk Right Now"];
+    return `<button class="jobrow" data-h="${r.health}" data-id="${r.id}">
+      <div class="jr-top">
+        <span class="jr-name">${esc(shortName(r.name))}</span>
+        <span class="jr-pm">${esc(r.pm)}</span>
+      </div>
+      <div class="jr-line">${bits.join(" · ")}</div>
+      ${risk ? `<div class="jr-risk"><span>Biggest risk</span>${esc(risk)}</div>` : ""}
+    </button>`;
+  }).join("");
+
+  document.querySelectorAll(".jobrow").forEach(el =>
+    el.onclick = () => openJob(rows.find(r => r.id === el.dataset.id)));
+}
+
+function openJob(r){
+  $("d-name").textContent = shortName(r.name);
+  $("d-sub").textContent = r.pm + (r.walk
+    ? " · last walked " + (r.walk.fields["Walk Date"] || "")
+    : " · no walk recorded");
+
+  if(!r.walk){
+    $("d-body").innerHTML = '<div class="empty">No walk has been submitted for this job yet.</div>';
+    return show("s-detail");
+  }
+
+  const f = r.walk.fields;
+  const flags = flagsOn(f);
+  const notes = [
+    ["What should have been done since last visit", f["Expected vs Actual"]],
+    ["Open client decisions", f["Open Client Decisions"]],
+    ["What slipped and the recovery plan", f["Schedule Detail"]],
+    ["What's blocking the next trade", f["What Is Blocking"]],
+    ["What the trades said they're waiting on", f["What Trades Said"]],
+    ["What the client owes us this week", f["Client Action Items"]],
+    ["Biggest risk right now", f["Biggest Risk Right Now"]],
+    ["Anything else for you", f["Anything Brandon Should See"]]
+  ].filter(([,v]) => v && String(v).trim());
+
+  const openList = issuesFor(r.id);
+
+  let html = "";
+
+  if(flags.length){
+    html += `<div class="block"><h3>Flagged this walk</h3>
+      <div class="flags">${flags.map(x => `<span class="flagchip">${esc(x)}</span>`).join("")}</div>
+    </div>`;
+  }
+
+  if(openList.length){
+    html += `<div class="block"><h3>Open issues</h3>` + openList.map(i => {
+      const fi = i.fields;
+      const photo = (fi["Photo"] || [])[0];
+      const thumb = photo && photo.thumbnails ? photo.thumbnails.small.url : null;
+      return `<div class="issue">
+        ${thumb ? `<img src="${thumb}" alt="">` : `<img alt="">`}
+        <div>
+          <div class="t">${esc(fi["Issue"])}</div>
+          <div class="m">${esc(fi["Responsible Party"] || "Unassigned")}${
+            fi["Promised Fix Date"] ? " · due " + fi["Promised Fix Date"] : ""}${
+            fi["Severity"] ? " · " + esc(fi["Severity"]) : ""}</div>
+          ${fi["Overdue"] === "Overdue" ? `<span class="late">Past due</span>` : ""}
+        </div>
+      </div>`;
+    }).join("") + `</div>`;
+  }
+
+  if(notes.length){
+    html += `<div class="block"><h3>From the walk</h3>` + notes.map(([q,a]) =>
+      `<div class="qa"><div class="q">${esc(q)}</div><div class="a">${esc(a)}</div></div>`
+    ).join("") + `</div>`;
+  }
+
+  if(!flags.length && !openList.length && !notes.length){
+    html += `<div class="empty">Clean walk. Nothing outstanding on this job.</div>`;
+  }
+
+  const reviewed = f["Brandon Reviewed"];
+  html += `<button class="btn ${reviewed ? "done" : ""}" id="review-btn" ${reviewed ? "disabled" : ""}>
+    ${reviewed ? "Reviewed" : "Mark reviewed"}</button>`;
+
+  $("d-body").innerHTML = html;
+  const rb = $("review-btn");
+  if(rb && !reviewed) rb.onclick = async () => {
+    rb.disabled = true; rb.textContent = "Saving…";
+    try{
+      await fetch(CONFIG.apiBase + "/review", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ id:r.walk.id, reviewed:true })
+      });
+      rb.className = "btn done"; rb.textContent = "Reviewed";
+    }catch(e){ rb.disabled = false; rb.textContent = "Mark reviewed"; }
+  };
+  show("s-detail");
+}
+
+$("back").onclick = () => { show("s-list"); window.scrollTo(0,0); };
+
+function show(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("on"));
+  $(id).classList.add("on");
+  window.scrollTo(0,0);
+}
+
+load();
+</script>
+</body>
+</html>
