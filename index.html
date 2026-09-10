@@ -220,6 +220,23 @@ textarea{min-height:96px;resize:vertical}
 .tally .flagged{box-shadow:inset 0 -.4em 0 var(--buff)}
 
 .empty{padding:56px var(--pad);text-align:center;color:var(--ink-soft)}
+
+/* carry-forward triage */
+.triage{padding:24px var(--pad) 130px}
+.triage > p.lede{margin:0 0 24px;color:var(--ink-soft);max-width:44ch}
+.oi{background:var(--paper-raised);border:1px solid var(--rule);
+  border-left:4px solid var(--ink-faint);border-radius:var(--radius);
+  padding:16px;margin-bottom:14px}
+.oi.late{border-left-color:var(--buff-edge)}
+.oi.settled{opacity:.55}
+.oi-top{display:flex;gap:13px;align-items:flex-start}
+.oi-top img{width:56px;height:56px;object-fit:cover;border-radius:3px;flex:0 0 auto;background:var(--paper)}
+.oi-title{font-weight:600;line-height:1.3}
+.oi-meta{font-size:13px;color:var(--ink-faint);margin-top:4px}
+.oi-late{display:inline-block;background:var(--buff);color:var(--ink);
+  font-size:12px;font-weight:600;padding:2px 7px;border-radius:3px;margin-top:6px}
+.oi .seg{margin-top:14px}
+.blocked{margin-top:12px;font-size:13px;color:var(--ink-soft);text-align:center}
 .banner{
   background:var(--gold-wash);border-bottom:1px solid var(--rule);
   padding:11px var(--pad);font-size:13px;color:var(--ink);text-align:center;
@@ -256,6 +273,27 @@ textarea{min-height:96px;resize:vertical}
     <div class="jobs" id="joblist"></div>
   </section>
 
+  <!-- ══ LAST WEEK'S ISSUES ══ -->
+  <section class="screen" id="s-triage">
+    <div class="walkbar">
+      <div class="walkbar-row">
+        <button class="back" id="triage-back">Back</button>
+        <span class="walkbar-job" id="triage-job"></span>
+      </div>
+    </div>
+    <div class="triage">
+      <h2 style="margin:0 0 4px;font-size:27px;font-weight:600;letter-spacing:-.025em">Last week's issues</h2>
+      <p class="lede">Walk these first. Mark each one before you start.</p>
+      <div id="triage-list"></div>
+    </div>
+    <div class="footer">
+      <div class="footer-inner" style="flex-direction:column">
+        <button class="btn" id="triage-next" style="width:100%">Start the walk</button>
+        <div class="blocked" id="triage-blocked"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ══ WALK ══ -->
   <section class="screen" id="s-walk">
     <div class="walkbar">
@@ -268,9 +306,12 @@ textarea{min-height:96px;resize:vertical}
     </div>
     <div class="section" id="walk-body"></div>
     <div class="footer">
-      <div class="footer-inner">
-        <button class="btn ghost" id="prev-btn" style="flex:0 0 34%">Previous</button>
-        <button class="btn" id="next-btn" style="flex:1">Continue</button>
+      <div class="footer-inner" style="flex-direction:column">
+        <div style="display:flex;gap:11px;width:100%">
+          <button class="btn ghost" id="prev-btn" style="flex:0 0 34%">Previous</button>
+          <button class="btn" id="next-btn" style="flex:1">Continue</button>
+        </div>
+        <div class="blocked" id="walk-blocked"></div>
       </div>
     </div>
   </section>
@@ -369,8 +410,6 @@ const SECTIONS = [
   { title:"Before you start",
     lede:"Everything you should already know walking in the door.",
     qs:[
-      {f:F.priorIssues, q:"Were last week's open issues fixed?",
-       opts:["All verified","Some still open","No prior issues"], flag:["Some still open"]},
       {f:F.expected, q:"What should have been finished since your last visit, and was it?",
        type:"text", hint:"A sentence is plenty. This is the one Brandon reads first."},
       {f:F.decisions, q:"Any client questions, decisions, or change orders still open?",
@@ -457,9 +496,17 @@ function jobType(full){
   return t.trim().replace(/^\w/, c => c.toUpperCase());
 }
 
-/* ── state ─────────────────────────────────────────────────── */
+const DEMO_OPEN = {
+  d1:[{id:"i1",title:"Drywall damage \u2014 master closet",party:"Drywall",due:"2026-09-05",late:true},
+      {id:"i2",title:"Wrong trim profile \u2014 dining window return",party:"Trim",due:"2026-09-12",late:false},
+      {id:"i3",title:"Outlet off-center in backsplash",party:"Electrical",due:"2026-09-04",late:true}],
+  d3:[{id:"i4",title:"Grout haze in guest bath",party:"Tile",due:"2026-09-11",late:false}]
+};
+
+/* \u2500\u2500 state \u2500\u2500 */
 let jobs = [], job = null, step = 0, answers = {}, issues = [], photos = [];
 let pendingField = null, pendingPhoto = null;
+let openIssues = [], triage = {};
 let currentPM = null;
 const live = () => !!CONFIG.apiBase;
 const $ = id => document.getElementById(id);
@@ -543,11 +590,90 @@ function renderJobs(){
 }
 
 /* ── walk ──────────────────────────────────────────────────── */
-function startWalk(j){
+async function startWalk(j){
   if(!j) return;
   job = j; step = 0; answers = {}; issues = []; photos = [];
-  show("s-walk"); renderStep();
+  openIssues = []; triage = {};
+
+  if(live()){
+    try{
+      const data = await api("/issues?job=" + encodeURIComponent(job.name));
+      openIssues = (data.records || []).map(r => ({
+        id:r.id,
+        title:r.fields["Issue"] || "Untitled issue",
+        party:r.fields["Responsible Party"] || "",
+        due:r.fields["Promised Fix Date"] || "",
+        late:r.fields["Overdue"] === "Overdue",
+        photo:((r.fields["Photo"] || [])[0] || {}).thumbnails
+              ? r.fields["Photo"][0].thumbnails.small.url : null
+      }));
+    }catch(e){ openIssues = []; }
+  } else {
+    openIssues = (DEMO_OPEN[job.id] || []).slice();
+  }
+
+  if(openIssues.length){ show("s-triage"); renderTriage(); }
+  else { answers[F.priorIssues] = "No prior issues"; show("s-walk"); renderStep(); }
 }
+
+function renderTriage(){
+  $("triage-job").textContent = shortName(job.name);
+  $("triage-list").innerHTML = openIssues.map(i => {
+    const v = triage[i.id];
+    return '<div class="oi ' + (i.late ? "late " : "") + (v ? "settled" : "") + '">' +
+      '<div class="oi-top">' +
+        (i.photo ? '<img src="' + i.photo + '" alt="">' : '<img alt="">') +
+        '<div>' +
+          '<div class="oi-title">' + esc(i.title) + '</div>' +
+          '<div class="oi-meta">' + esc(i.party) + (i.due ? " \u00b7 due " + i.due : "") + '</div>' +
+          (i.late ? '<span class="oi-late">Past due</span>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="seg">' +
+        '<button data-tri="' + i.id + '" data-v="Verified closed" aria-pressed="' + (v === "Verified closed") + '">Fixed</button>' +
+        '<button data-tri="' + i.id + '" data-v="Open" data-flag="1" aria-pressed="' + (v === "Open") + '">Still open</button>' +
+      '</div>' +
+    '</div>';
+  }).join("");
+
+  $("triage-list").querySelectorAll("[data-tri]").forEach(b => b.onclick = () => {
+    const y = window.scrollY;
+    triage[b.dataset.tri] = b.dataset.v;
+    renderTriage(); window.scrollTo(0, y);
+  });
+
+  const left = openIssues.filter(i => !triage[i.id]).length;
+  $("triage-next").disabled = left > 0;
+  $("triage-blocked").textContent = left
+    ? left + (left === 1 ? " issue" : " issues") + " still to mark"
+    : "";
+}
+
+$("triage-back").onclick = () => { show("s-jobs"); renderJobs(); };
+
+$("triage-next").onclick = async () => {
+  const closed = openIssues.filter(i => triage[i.id] === "Verified closed");
+  if(live() && closed.length){
+    $("triage-next").disabled = true;
+    $("triage-next").textContent = "Saving\u2026";
+    try{
+      for(const i of closed){
+        await api("/issue", { method:"POST",
+          body: JSON.stringify({ id:i.id, status:"Verified closed" }) });
+      }
+    }catch(e){
+      $("triage-next").disabled = false;
+      $("triage-next").textContent = "Start the walk";
+      alert("Couldn't update those issues: " + e.message);
+      return;
+    }
+    $("triage-next").textContent = "Start the walk";
+  }
+  // Derived from what they actually marked, not self-reported.
+  answers[F.priorIssues] = openIssues.some(i => triage[i.id] === "Open")
+    ? "Some still open" : "All verified";
+  show("s-walk"); renderStep();
+};
 
 function visible(qs){
   return qs.filter(q => !q.showIf || answers[q.showIf.f] === q.showIf.is);
@@ -567,6 +693,16 @@ function renderStep(keepScroll){
 
   $("prev-btn").style.visibility = step === 0 ? "hidden" : "visible";
   $("next-btn").textContent = step === SECTIONS.length - 1 ? "Finish walk" : "Continue";
+
+  // A flag without a documented issue is exactly what Brandon can't act on,
+  // so it blocks the walk rather than just prompting.
+  const unresolved = visible(s.qs).filter(q =>
+    q.flag && q.flag.includes(answers[q.f]) && !issues.some(i => i.field === q.f));
+  $("next-btn").disabled = unresolved.length > 0;
+  $("walk-blocked").textContent = unresolved.length
+    ? (unresolved.length === 1 ? "Log the issue you found to continue"
+                               : unresolved.length + " flagged answers still need an issue logged")
+    : "";
   wireStep();
   window.scrollTo(0, keepScroll ? y : 0);
 }
@@ -627,6 +763,7 @@ function wireStep(){
 }
 
 $("next-btn").onclick = () => {
+  if($("next-btn").disabled) return;
   if(step === SECTIONS.length - 1) return finish();
   step++; renderStep();
 };
