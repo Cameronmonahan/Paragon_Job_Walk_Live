@@ -39,6 +39,11 @@ button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
 .top h1{margin:0;font-size:15px;font-weight:600;letter-spacing:.14em;
   text-transform:uppercase;color:var(--gold)}
 .top p{margin:4px 0 0;font-size:29px;font-weight:600;letter-spacing:-.02em}
+.tophead{display:flex;justify-content:space-between;align-items:flex-end;gap:18px}
+.addjob{flex:0 0 auto;text-decoration:none;color:var(--paper);
+  border:1px solid #5C5C5A;border-radius:var(--radius);
+  padding:10px 16px;font-size:15px;font-weight:500;white-space:nowrap}
+.addjob:hover{border-color:var(--gold);color:var(--gold)}
 .top .date{font-size:15px;font-weight:400;color:#A6A6A0}
 
 /* the headline: one sentence Brandon reads first */
@@ -147,8 +152,13 @@ button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
 <div class="top">
   <div class="inner">
     <img src="logo.png" alt="Paragon Homes" onerror="this.remove()">
-    <h1>Paragon</h1>
-    <p>Job status<span class="date" id="date"></span></p>
+    <div class="tophead">
+      <div>
+        <h1>Paragon</h1>
+        <p>Job status<span class="date" id="date"></span></p>
+      </div>
+      <a class="addjob" href="newjob.html">Add job</a>
+    </div>
   </div>
 </div>
 
