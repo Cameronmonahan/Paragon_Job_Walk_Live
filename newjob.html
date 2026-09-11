@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#303030">
+<title>Paragon — New job</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F1F1EE; --paper-raised:#FFFFFF;
+  --ink:#303030; --ink-soft:#5C5C5C; --ink-faint:#8C8C8C;
+  --gold:#8A8C79; --gold-wash:#EAEBE5;
+  --attn:#9A6F1E; --attn-tint:#FBF4E6; --attn-edge:#E6D4AC;
+  --rule:#DCDCD6; --radius:4px; --pad:22px; --tap:52px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);
+  font-family:'Archivo',system-ui,-apple-system,sans-serif;font-size:17px;line-height:1.45;
+  -webkit-font-smoothing:antialiased}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+input,select{font-family:inherit;font-size:17px;color:inherit}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+
+.top{background:var(--ink);color:var(--paper);
+  padding:calc(env(safe-area-inset-top) + 26px) var(--pad) 26px}
+.top .inner{max-width:560px;margin:0 auto}
+.top img{height:34px;margin-bottom:14px;display:block}
+.top h1{margin:0;font-size:15px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gold)}
+.top p{margin:4px 0 0;font-size:29px;font-weight:600;letter-spacing:-.02em}
+
+.wrap{max-width:560px;margin:0 auto;padding:28px var(--pad) 140px}
+.f{margin-bottom:24px}
+.f label{display:block;font-size:15px;font-weight:500;margin-bottom:9px}
+.f .hint{font-size:13.5px;color:var(--ink-faint);margin-top:7px;line-height:1.4}
+input,select{width:100%;min-height:var(--tap);background:var(--paper-raised);
+  border:1.5px solid var(--rule);border-radius:var(--radius);padding:12px 14px}
+select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' fill='none' stroke='%235C5C5C' stroke-width='1.6' stroke-linecap='round'/></svg>");
+  background-repeat:no-repeat;background-position:right 15px center;padding-right:40px}
+
+/* live preview of the folder-convention name */
+.preview{background:var(--paper-raised);border:1px solid var(--rule);
+  border-left:3px solid var(--gold);border-radius:var(--radius);
+  padding:15px 16px;margin-bottom:28px}
+.preview .l{font-size:11.5px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
+.preview .v{font-size:16px;font-weight:600;word-break:break-word}
+.preview .v.empty{font-weight:400;color:var(--ink-faint)}
+
+.footer{position:fixed;bottom:0;left:0;right:0;
+  background:linear-gradient(to bottom,rgba(241,241,238,0),var(--paper) 26%);
+  padding:26px var(--pad) calc(env(safe-area-inset-bottom) + 20px)}
+.footer-inner{max-width:560px;margin:0 auto}
+.btn{width:100%;min-height:var(--tap);border-radius:var(--radius);font-weight:600;
+  border:1.5px solid var(--ink);background:var(--ink);color:var(--paper)}
+.btn:disabled{opacity:.4}
+.msg{margin-top:12px;font-size:14px;text-align:center;color:var(--ink-soft)}
+.msg.err{color:var(--attn)}
+
+.done{text-align:center;padding:70px var(--pad)}
+.done .mark{width:64px;height:64px;border-radius:50%;background:var(--ink);color:#fff;
+  display:grid;place-items:center;font-size:30px;margin:0 auto 24px}
+.done h2{margin:0 0 10px;font-size:28px;font-weight:600;letter-spacing:-.025em}
+.done .name{font-size:16px;color:var(--ink-soft);margin:0 auto 28px;max-width:34ch;
+  word-break:break-word}
+.hide{display:none}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="inner">
+    <img src="logo.png" alt="Paragon Homes" onerror="this.remove()">
+    <h1>Paragon</h1>
+    <p>New job</p>
+  </div>
+</div>
+
+<div class="wrap" id="form">
+  <div class="preview">
+    <div class="l">Folder name</div>
+    <div class="v empty" id="preview">Fill in the project name and type</div>
+  </div>
+
+  <div class="f">
+    <label for="project">Project name</label>
+    <input type="text" id="project" placeholder="Bennett" autocapitalize="words">
+    <div class="hint">Last name or site name. Goes in caps automatically, the way Drive has it.</div>
+  </div>
+
+  <div class="f">
+    <label for="type">Project type</label>
+    <select id="type">
+      <option value="">Choose one</option>
+      <option>Residence</option>
+      <option>Remodel</option>
+      <option>Basement</option>
+      <option>Detached Garage</option>
+      <option>Backyard</option>
+      <option>Commercial TI</option>
+    </select>
+  </div>
+
+  <div class="f">
+    <label for="date">Job date</label>
+    <input type="date" id="date">
+    <div class="hint">The date that goes on the front of the folder name.</div>
+  </div>
+
+  <div class="f">
+    <label for="status">Status</label>
+    <select id="status">
+      <option>Committed - Not Started</option>
+      <option>Prospective</option>
+      <option>Active</option>
+      <option>Punch &amp; Closeout</option>
+    </select>
+  </div>
+
+  <div class="f">
+    <label for="pm">Project manager</label>
+    <select id="pm">
+      <option value="">Not assigned yet</option>
+      <option>Seth</option>
+      <option>Carlos</option>
+      <option>Brandon</option>
+    </select>
+  </div>
+
+  <div class="f">
+    <label for="start">Scheduled start</label>
+    <input type="date" id="start">
+    <div class="hint">Leave blank if it isn't scheduled.</div>
+  </div>
+
+  <div class="f">
+    <label for="address">Address</label>
+    <input type="text" id="address" placeholder="4820 Oakmont Dr">
+  </div>
+
+  <div class="f">
+    <label for="client">Client name</label>
+    <input type="text" id="client" autocapitalize="words">
+  </div>
+
+  <div class="f">
+    <label for="email">Client email</label>
+    <input type="email" id="email" autocapitalize="off" autocorrect="off">
+  </div>
+</div>
+
+<div class="wrap hide" id="done">
+  <div class="done">
+    <div class="mark">✓</div>
+    <h2>Job created</h2>
+    <p class="name" id="done-name"></p>
+    <button class="btn" id="again">Add another</button>
+  </div>
+</div>
+
+<div class="footer" id="footer">
+  <div class="footer-inner">
+    <button class="btn" id="save" disabled>Create job</button>
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<script>
+const CONFIG = { apiBase: "https://paragon-walks.peakexposure.workers.dev" };
+const $ = id => document.getElementById(id);
+
+/* Same string Drive uses, built from the form so it can't drift. */
+function jobName(){
+  const p = $("project").value.trim();
+  const t = $("type").value;
+  const d = $("date").value;
+  if(!p || !t) return null;
+  return (d || new Date().toISOString().slice(0,10)) + " " + p.toUpperCase() + " - " + t;
+}
+
+function refresh(){
+  const n = jobName();
+  $("preview").textContent = n || "Fill in the project name and type";
+  $("preview").className = "v" + (n ? "" : " empty");
+  $("save").disabled = !n;
+}
+
+["project","type","date"].forEach(id => {
+  $(id).addEventListener("input", refresh);
+  $(id).addEventListener("change", refresh);
+});
+$("date").value = new Date().toISOString().slice(0,10);
+refresh();
+
+$("save").onclick = async () => {
+  const name = jobName();
+  if(!name) return;
+  $("save").disabled = true;
+  $("save").textContent = "Creating…";
+  $("msg").className = "msg";
+  $("msg").textContent = "";
+  try{
+    const r = await fetch(CONFIG.apiBase + "/job", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        project:$("project").value.trim(), type:$("type").value,
+        date:$("date").value, status:$("status").value, pm:$("pm").value,
+        start:$("start").value, address:$("address").value.trim(),
+        client:$("client").value.trim(), email:$("email").value.trim()
+      })
+    });
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error || ("server said " + r.status));
+    $("done-name").textContent = data.name;
+    $("form").classList.add("hide");
+    $("footer").classList.add("hide");
+    $("done").classList.remove("hide");
+  }catch(e){
+    $("save").disabled = false;
+    $("save").textContent = "Create job";
+    $("msg").className = "msg err";
+    $("msg").textContent = "Couldn't create it: " + e.message;
+  }
+};
+
+$("again").onclick = () => location.reload();
+</script>
+</body>
+</html>
