@@ -24,6 +24,9 @@
   --ink-faint:#8C8C8C;
   --gold:#8A8C79;         /* Bitter Gold  — the main brand color */
   --gold-wash:#EAEBE5;
+  --attn:#9A6F1E;         /* Buff Yellow deepened, so it works as type */
+  --attn-tint:#FBF4E6;
+  --attn-edge:#E6D4AC;
   --buff:#F4D185;         /* Buff Yellow  — borders, guides the eye */
   --buff-wash:#FDF6E7;
   --buff-edge:#E8C273;
@@ -73,7 +76,7 @@ input,textarea,select{font-family:inherit;font-size:17px;color:inherit}
   border:1px solid var(--rule);border-left:5px solid var(--gold);
   border-radius:var(--radius);padding:18px 18px 16px;
 }
-.job[data-health="flag"]{border-left-color:var(--buff)}
+.job[data-health="flag"]{border-left-color:var(--attn)}
 .job[data-health="due"]{border-left-color:var(--ink-faint)}
 .person{display:block;width:100%;text-align:left;background:var(--paper-raised);
   border:1px solid var(--rule);border-left:5px solid var(--gold);
@@ -81,9 +84,9 @@ input,textarea,select{font-family:inherit;font-size:17px;color:inherit}
 .job-name{font-size:19px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
 .job-pm{font-size:14px;color:var(--ink-faint);margin-top:3px}
 .job-stats{display:flex;gap:22px;margin-top:14px;padding-top:13px;border-top:1px solid var(--rule)}
-.stat .n{font-size:22px;font-weight:600;line-height:1}
+.stat .n{font-size:22px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
 .stat .l{font-size:12px;color:var(--ink-faint);margin-top:3px;letter-spacing:.02em}
-.stat.flagged .n{box-shadow:inset 0 -.35em 0 var(--buff)}
+.stat.flagged .n{color:var(--attn)}
 
 /* ---------- walk header + progress rail ---------- */
 .walkbar{
@@ -113,9 +116,8 @@ input,textarea,select{font-family:inherit;font-size:17px;color:inherit}
 
 /* ---------- question ---------- */
 .q{padding:0 0 0 14px;margin:0 0 26px;border-left:3px solid transparent}
-.q.flagged{border-left-color:var(--buff)}
+.q.flagged{border-left-color:var(--attn)}
 .q > label,.q .qtext{display:block;font-size:17px;font-weight:500;margin-bottom:11px;max-width:42ch}
-.q.flagged .qtext{box-shadow:inset 0 -.55em 0 var(--buff)}
 
 /* segmented control — one tap, not a dropdown */
 .seg{display:flex;flex-wrap:wrap;gap:8px}
@@ -127,9 +129,6 @@ input,textarea,select{font-family:inherit;font-size:17px;color:inherit}
 }
 .seg button[aria-pressed="true"]{
   background:var(--ink);border-color:var(--ink);color:#fff;
-}
-.seg button[aria-pressed="true"][data-flag="1"]{
-  background:var(--buff);border-color:var(--buff-edge);color:var(--ink);
 }
 
 textarea,input[type=date],input[type=text]{
@@ -153,11 +152,11 @@ textarea{min-height:96px;resize:vertical}
 
 /* ---------- redline: the one bold gesture ---------- */
 .redline{
-  margin-top:14px;background:var(--buff-wash);
-  border:1px solid #E3C4B8;border-left:3px solid var(--buff);
-  border-radius:var(--radius);padding:15px;
+  margin-top:14px;background:var(--paper-raised);
+  border:1px solid var(--rule);border-left:3px solid var(--attn);
+  border-radius:var(--radius);padding:16px;
 }
-.redline p{margin:0 0 12px;font-size:14px;color:var(--ink);font-weight:500}
+.redline p{margin:0 0 13px;font-size:14px;color:var(--ink-soft);line-height:1.45}
 .logged{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
 .logged-item{
   display:flex;gap:11px;align-items:center;background:var(--paper-raised);
@@ -172,7 +171,7 @@ textarea{min-height:96px;resize:vertical}
   border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);
 }
 .btn.ghost{background:transparent;color:var(--ink)}
-.btn.flag{background:var(--buff);border-color:var(--buff-edge);color:var(--ink)}
+.btn.flag{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 .btn.solid{background:var(--ink);border-color:var(--ink);color:#fff}
 .btn:disabled{opacity:.4}
 .footer{
@@ -215,9 +214,9 @@ textarea{min-height:96px;resize:vertical}
   display:flex;justify-content:center;gap:38px;margin:0 0 34px;padding:22px 0;
   border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
 }
-.tally .n{font-size:31px;font-weight:600;line-height:1}
+.tally .n{font-size:31px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
 .tally .l{font-size:12px;color:var(--ink-faint);margin-top:4px}
-.tally .flagged{box-shadow:inset 0 -.4em 0 var(--buff)}
+.tally .flagged{color:var(--attn)}
 
 .empty{padding:56px var(--pad);text-align:center;color:var(--ink-soft)}
 
@@ -227,14 +226,14 @@ textarea{min-height:96px;resize:vertical}
 .oi{background:var(--paper-raised);border:1px solid var(--rule);
   border-left:4px solid var(--ink-faint);border-radius:var(--radius);
   padding:16px;margin-bottom:14px}
-.oi.late{border-left-color:var(--buff-edge)}
+.oi.late{border-left-color:var(--attn)}
 .oi.settled{opacity:.55}
 .oi-top{display:flex;gap:13px;align-items:flex-start}
 .oi-top img{width:56px;height:56px;object-fit:cover;border-radius:3px;flex:0 0 auto;background:var(--paper)}
 .oi-title{font-weight:600;line-height:1.3}
 .oi-meta{font-size:13px;color:var(--ink-faint);margin-top:4px}
-.oi-late{display:inline-block;background:var(--buff);color:var(--ink);
-  font-size:12px;font-weight:600;padding:2px 7px;border-radius:3px;margin-top:6px}
+.oi-late{display:inline-block;color:var(--attn);font-size:11.5px;font-weight:600;
+  letter-spacing:.07em;text-transform:uppercase;margin-top:7px}
 .oi .seg{margin-top:14px}
 .blocked{margin-top:12px;font-size:13px;color:var(--ink-soft);text-align:center}
 .banner{
